@@ -17,6 +17,10 @@ import PIL
 ROW_COUNT = 24
 COLUMN_COUNT = 10
 
+# Set the dimension for small window for next-stone preview
+PREVIEW_ROW_COUNT = 2
+PREVIEW_COL_COUNT = 5
+
 # This sets the WIDTH and HEIGHT of each grid location
 WIDTH = 30
 HEIGHT = 30
@@ -26,8 +30,8 @@ HEIGHT = 30
 MARGIN = 5
 
 # Do the math to figure out our screen dimensions
-WINDOW_WIDTH = (WIDTH + MARGIN) * COLUMN_COUNT + MARGIN
-WINDOW_HEIGHT = (HEIGHT + MARGIN) * ROW_COUNT + MARGIN
+WINDOW_WIDTH = (WIDTH + MARGIN) * (PREVIEW_COL_COUNT + COLUMN_COUNT) + MARGIN
+WINDOW_HEIGHT = (HEIGHT + MARGIN) * (1 + ROW_COUNT) + MARGIN
 WINDOW_TITLE = "Tetris"
 
 colors = [
@@ -101,12 +105,14 @@ def join_matrixes(matrix_1, matrix_2, matrix_2_offset):
     return matrix_1
 
 
-def new_board():
+def new_board(rows, cols):
     """Create a grid of 0's. Add 1's to the bottom for easier collision detection."""
     # Create the main board of 0's
-    board = [[0 for _x in range(COLUMN_COUNT)] for _y in range(ROW_COUNT)]
+    board = [[0 for _x in range(cols)] for _y in range(rows)]
     # Add a bottom border of 1's
-    board += [[1 for _x in range(COLUMN_COUNT)]]
+    if rows == ROW_COUNT:
+        board += [[1 for _x in range(cols)]]
+        print(len(board), len(board[0]))
     return board
 
 
@@ -118,10 +124,12 @@ class GameView(arcade.View):
         self.window.background_color = arcade.color.WHITE
 
         self.board = None
+        self.board_preview = None
         self.start_frame = 0
         self.game_over = False
         self.paused = False
         self.board_sprite_list = None
+        self.board_preview_sprite_list = None
 
         self.stone = None
         self.stone_x = 0
@@ -148,20 +156,39 @@ class GameView(arcade.View):
             self.game_over = True
 
     def setup(self):
-        self.board = new_board()
+        """Set up the game variables, board and sprite list"""
+        self.board = new_board(ROW_COUNT, COLUMN_COUNT)
+        self.board_preview = new_board(PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT)
         self.start_frame = GLOBAL_CLOCK.ticks
 
         self.board_sprite_list = arcade.SpriteList()
+        self.board_preview_sprite_list = arcade.SpriteList()
+
+        # spritify the main board
         for row in range(len(self.board)):
             for column in range(len(self.board[0])):
                 sprite = arcade.Sprite(texture_list[0])
                 sprite.textures = texture_list
                 sprite.center_x = (MARGIN + WIDTH) * column + MARGIN + WIDTH // 2
                 sprite.center_y = (
-                    WINDOW_HEIGHT - (MARGIN + HEIGHT) * row + MARGIN + HEIGHT // 2
+                    WINDOW_HEIGHT - (MARGIN + HEIGHT) * (1 + row) + MARGIN + HEIGHT // 2
                 )
 
                 self.board_sprite_list.append(sprite)
+
+        # spritify the preview board
+        for row in range(len(self.board_preview)):
+            for column in range(len(self.board_preview[0])):
+                sprite = arcade.Sprite(texture_list[0])
+                sprite.textures = texture_list
+                sprite.center_x = (
+                    (MARGIN + WIDTH) * (COLUMN_COUNT + 1 + column) + MARGIN + WIDTH // 2
+                )
+                sprite.center_y = (
+                    WINDOW_HEIGHT - (MARGIN + HEIGHT) * (1 + row) + MARGIN + HEIGHT // 2
+                )
+
+                self.board_preview_sprite_list.append(sprite)
 
         self.new_stone()
         self.update_board()
@@ -217,13 +244,17 @@ class GameView(arcade.View):
             if not check_collision(self.board, self.stone, (new_x, self.stone_y)):
                 self.stone_x = new_x
 
-    def start_game(self): pass 
+    def start_game(self):
+        pass
 
-    def pause_game(self): pass  
+    def pause_game(self):
+        pass
 
-    def resume_game(self): pass
+    def resume_game(self):
+        pass
 
-    def get_state(self): return {"board": None, "score": 0, "level": 1, "lines": 0, "next_queue": []}  
+    def get_state(self):
+        return {"board": None, "score": 0, "level": 1, "lines": 0, "next_queue": []}
 
     def on_key_press(self, key, modifiers):
         """
@@ -242,22 +273,27 @@ class GameView(arcade.View):
         elif key == arcade.key.DOWN:
             self.drop()
 
-    def draw_grid(self, grid, offset_x, offset_y):
+    def draw_grid(self, grid, offset_x, offset_y, board_offset_x=0):
         """
         Draw the grid. Used to draw the falling stones. The board is drawn
         by the sprite list.
         """
         # Draw the grid
-        for row in range(len(grid)):
-            for column in range(len(grid[0])):
+        for row_idx, row_data in enumerate(grid):
+            for col_idx, cell_value in enumerate(row_data):
                 # Figure out what color to draw the box
-                if grid[row][column]:
-                    color = colors[grid[row][column]]
+                if cell_value:
+                    color = colors[cell_value]
                     # Do the math to figure out where the box is
-                    x = (MARGIN + WIDTH) * (column + offset_x) + MARGIN + WIDTH // 2
+                    x = (
+                        board_offset_x
+                        + (MARGIN + WIDTH) * (col_idx + offset_x)
+                        + MARGIN
+                        + WIDTH // 2
+                    )
                     y = (
                         WINDOW_HEIGHT
-                        - (MARGIN + HEIGHT) * (row + offset_y)
+                        - (MARGIN + HEIGHT) * (row_idx + offset_y)
                         + MARGIN
                         + HEIGHT // 2
                     )
@@ -271,11 +307,19 @@ class GameView(arcade.View):
         """
         Update the sprite list to reflect the contents of the 2d grid
         """
+        # update main board prites
         for row in range(len(self.board)):
             for column in range(len(self.board[0])):
                 v = self.board[row][column]
                 i = row * COLUMN_COUNT + column
                 self.board_sprite_list[i].set_texture(v)
+
+        # update preview board sprites
+        for row in range(len(self.board_preview)):
+            for column in range(len(self.board_preview[0])):
+                v = self.board_preview[row][column]
+                i = row * PREVIEW_COL_COUNT + column
+                self.board_preview_sprite_list[i].set_texture(v)
 
     def on_draw(self):
         """Render the screen."""
@@ -283,6 +327,7 @@ class GameView(arcade.View):
         # This command has to happen before we start drawing
         self.clear()
         self.board_sprite_list.draw()
+        self.board_preview_sprite_list.draw()
         self.draw_grid(self.stone, self.stone_x, self.stone_y)
 
 
