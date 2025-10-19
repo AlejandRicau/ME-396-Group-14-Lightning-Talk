@@ -34,7 +34,7 @@ WINDOW_WIDTH = (WIDTH + MARGIN) * (PREVIEW_COL_COUNT + COLUMN_COUNT) + MARGIN
 WINDOW_HEIGHT = (HEIGHT + MARGIN) * (ROW_COUNT)
 WINDOW_TITLE = "Tetris"
 
-colors = [
+colors = [  # the last entry is the transparency of the color
     (0, 0, 0, 255),
     (255, 0, 0, 255),
     (0, 150, 0, 255),
@@ -46,7 +46,7 @@ colors = [
 ]
 
 # Define the shapes of the single parts
-tetris_shapes = [
+tetris_shapes = [  # this is the default orientation
     [[1, 1, 1], [0, 1, 0]],
     [[0, 2, 2], [2, 2, 0]],
     [[3, 3, 0], [0, 3, 3]],
@@ -98,6 +98,7 @@ def remove_row(board, row):
 
 def join_matrixes(matrix_1, matrix_2, matrix_2_offset):
     """Copy matrix 2 onto matrix 1 based on the passed in x, y offset coordinate"""
+    # Nemo: This function is used to join board with the sprite stones
     offset_x, offset_y = matrix_2_offset
     for cy, row in enumerate(matrix_2):
         for cx, val in enumerate(row):
@@ -110,6 +111,7 @@ def new_board(rows, cols):
     # Create the main board of 0's
     board = [[0 for _x in range(cols)] for _y in range(rows)]
     # Add a bottom border of 1's
+    # Nemo: only add 1's if it is for the main board, I hide the 1's by reducing the window height
     if rows == ROW_COUNT:
         board += [[1 for _x in range(cols)]]
     return board
@@ -122,23 +124,23 @@ class GameView(arcade.View):
         super().__init__()
         self.window.background_color = arcade.color.WHITE
 
-        self.board = None
-        self.board_preview = None
+        self.board = None  # init of main board
+        self.board_preview = None  # init of the preview board
         self.start_frame = 0
         self.game_over = False
         self.paused = False
-        self.board_sprite_list = None
-        self.board_preview_sprite_list = None
+        self.board_sprite_list = None  # init of board blocks/boxes
+        self.board_preview_sprite_list = None  # init of preview blocks/boxes
 
-        self.stone = None
-        self.next_stone = None
-        self.stone_x = 0
+        self.stone = None  # current stone in hand
+        self.next_stone = None  # next stone in line for preview
+        self.stone_x = 0  # top left coordinate of stone (empty included)
         self.stone_y = 0
 
-        self.ghost_x = self.stone_x
+        self.ghost_x = self.stone_x  # coordinate for landing prediction
         self.ghost_y = 0
 
-        self.stones = []
+        self.stones = []  # query of stone to pick from
 
     def new_stone(self):
         """
@@ -147,29 +149,33 @@ class GameView(arcade.View):
         Then set the stone's location to the top.
         If we immediately collide, then game-over.
         """
-        if not self.stones:
+        if not self.stones:  # add 3 random stones to the bag of choice
             self.stones = [random.choice(tetris_shapes) for _ in range(3)]
 
-        # Get the first stone from the bag and call the next stone from the bag
-        self.stone = self.stones.pop(0)
-        self.next_stone = self.stones[0]
-        self.stones.append(random.choice(tetris_shapes))
+        self.stone = self.stones.pop(0)  # get the first 1 and remove it from the list
+        self.next_stone = self.stones[0]  # set the next one to be the preview
+        self.stones.append(
+            random.choice(tetris_shapes)
+        )  # add 1 more stone to the bag to maintain a count of 3
 
-        # Refresh the preview board and replace it with the next stone
-        self.board_preview = new_board(PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT)
+        self.board_preview = new_board(
+            PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT
+        )  # refresh the board
         x_offset = 0
         if len(self.next_stone[0]) == 2:  # make the 2x2 stone to show in the middle
             x_offset = 1
-        self.board_preview = join_matrixes(
-            self.board_preview, self.next_stone, (x_offset, 0)
+        self.board_preview = (
+            join_matrixes(  # join the preview stone with the small preview board
+                self.board_preview, self.next_stone, (x_offset, 0)
+            )
         )
         self.update_board()
 
         # Place a new stone on the board
         self.stone_x = int(COLUMN_COUNT / 2 - len(self.stone[0]) / 2)
         self.stone_y = 0
-        self.ghost_x = self.stone_x
-        self.ghost_y = self.ghost_piece_position()
+        self.ghost_x = self.stone_x  # update the ghost coordinates
+        self.ghost_y = self.ghost_piece_position()  # predict the landing positiion
 
         if check_collision(self.board, self.stone, (self.stone_x, self.stone_y)):
             self.game_over = True
@@ -231,7 +237,7 @@ class GameView(arcade.View):
 
                 while True:
                     for i, row in enumerate(self.board[:-1]):
-                        if 0 not in row:
+                        if 0 not in row:  # remove row is it is filled
                             self.board = remove_row(self.board, i)
                             break
                     else:
@@ -250,6 +256,7 @@ class GameView(arcade.View):
 
     def on_update(self, delta_time):
         """Update, drop stone if warranted"""
+        # This is the mechanism where time progresses
         if GLOBAL_CLOCK.ticks_since(self.start_frame) % 10 == 0:
             self.drop()
 
@@ -311,7 +318,8 @@ class GameView(arcade.View):
                     # Do the math to figure out where the box is
                     x = (
                         board_offset_x
-                        + (MARGIN + WIDTH) * (col_idx + offset_x)
+                        + (MARGIN + WIDTH)  # unit width of box
+                        * (col_idx + offset_x)  # box coordinate
                         + MARGIN
                         + WIDTH // 2
                     )
@@ -376,7 +384,7 @@ class GameView(arcade.View):
         self.board_sprite_list.draw()
         self.board_preview_sprite_list.draw()
         self.draw_grid(self.stone, self.stone_x, self.stone_y)
-        self.draw_ghost()
+        self.draw_ghost()  # This is for the landing prediction
 
     def ghost_piece_position(self):
         """Calculate the position of the ghost piece."""
