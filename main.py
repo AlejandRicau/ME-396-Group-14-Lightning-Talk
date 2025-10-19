@@ -135,6 +135,9 @@ class GameView(arcade.View):
         self.stone_x = 0
         self.stone_y = 0
 
+        self.ghost_x = self.stone_x
+        self.ghost_y = 0
+
         self.stones = []
 
     def new_stone(self):
@@ -150,21 +153,23 @@ class GameView(arcade.View):
         # Get the first stone from the bag and call the next stone from the bag
         self.stone = self.stones.pop(0)
         self.next_stone = self.stones[0]
-        print(self.stones, "|", self.next_stone)
         self.stones.append(random.choice(tetris_shapes))
 
         # Refresh the preview board and replace it with the next stone
         self.board_preview = new_board(PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT)
         x_offset = 0
-        if len(self.next_stone[0]) == 2:
+        if len(self.next_stone[0]) == 2:  # make the 2x2 stone to show in the middle
             x_offset = 1
         self.board_preview = join_matrixes(
             self.board_preview, self.next_stone, (x_offset, 0)
         )
         self.update_board()
 
+        # Place a new stone on the board
         self.stone_x = int(COLUMN_COUNT / 2 - len(self.stone[0]) / 2)
         self.stone_y = 0
+        self.ghost_x = self.stone_x
+        self.ghost_y = self.ghost_piece_position()
 
         if check_collision(self.board, self.stone, (self.stone_x, self.stone_y)):
             self.game_over = True
@@ -279,6 +284,7 @@ class GameView(arcade.View):
         Rotate stone,
         or drop down
         """
+        # actual keyboard response
         if key == arcade.key.LEFT:
             self.move(-1)
         elif key == arcade.key.RIGHT:
@@ -287,6 +293,9 @@ class GameView(arcade.View):
             self.rotate_stone()
         elif key == arcade.key.DOWN:
             self.drop()
+
+        # update the position of ghost piece
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
 
     def draw_grid(self, grid, offset_x, offset_y, board_offset_x=0):
         """
@@ -318,23 +327,46 @@ class GameView(arcade.View):
                         arcade.rect.XYWH(x, y, WIDTH, HEIGHT), color
                     )
 
+    def draw_ghost(self):
+        """color the ghost piece where the current stone is predicted to be landing"""
+
+        # Figure out what color to draw the box
+        color = list(colors[max(self.stone[0])])
+        color[3] /= 3
+        color = tuple(color)
+
+        for row_idx, row_data in enumerate(self.stone):
+            for col_idx, cell_value in enumerate(row_data):
+                # Do the math to figure out where the box is
+                x = (self.ghost_x + col_idx) * (MARGIN + WIDTH) + MARGIN + WIDTH // 2
+                y = (
+                    WINDOW_HEIGHT
+                    - (MARGIN + HEIGHT) * (self.ghost_y + row_idx)
+                    + MARGIN
+                    + HEIGHT // 2
+                )
+
+                # Draw the box
+                if cell_value:
+                    arcade.draw_rect_filled(
+                        arcade.rect.XYWH(x, y, WIDTH, HEIGHT), color
+                    )
+
     def update_board(self):
         """
         Update the sprite list to reflect the contents of the 2d grid
         """
         # update main board prites
-        for row in range(len(self.board)):
-            for column in range(len(self.board[0])):
-                v = self.board[row][column]
-                i = row * COLUMN_COUNT + column
-                self.board_sprite_list[i].set_texture(v)
+        for row_idx, row_data in enumerate(self.board):
+            for col_idx, cell_value in enumerate(row_data):
+                i = row_idx * COLUMN_COUNT + col_idx
+                self.board_sprite_list[i].set_texture(cell_value)
 
         # update preview board sprites
-        for row in range(len(self.board_preview)):
-            for column in range(len(self.board_preview[0])):
-                v = self.board_preview[row][column]
-                i = row * PREVIEW_COL_COUNT + column
-                self.board_preview_sprite_list[i].set_texture(v)
+        for row_idx, row_data in enumerate(self.board_preview):
+            for col_idx, cell_value in enumerate(row_data):
+                i = row_idx * PREVIEW_COL_COUNT + col_idx
+                self.board_preview_sprite_list[i].set_texture(cell_value)
 
     def on_draw(self):
         """Render the screen."""
@@ -344,6 +376,14 @@ class GameView(arcade.View):
         self.board_sprite_list.draw()
         self.board_preview_sprite_list.draw()
         self.draw_grid(self.stone, self.stone_x, self.stone_y)
+        self.draw_ghost()
+
+    def ghost_piece_position(self):
+        """Calculate the position of the ghost piece."""
+        ghost_y = self.stone_y
+        while not check_collision(self.board, self.stone, (self.stone_x, ghost_y)):
+            ghost_y += 1
+        return ghost_y
 
 
 def main():
