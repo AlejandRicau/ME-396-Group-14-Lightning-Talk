@@ -31,7 +31,7 @@ MARGIN = 5
 
 # Do the math to figure out our screen dimensions
 WINDOW_WIDTH = (WIDTH + MARGIN) * (PREVIEW_COL_COUNT + COLUMN_COUNT) + MARGIN
-WINDOW_HEIGHT = (HEIGHT + MARGIN) * (1 + ROW_COUNT) + MARGIN
+WINDOW_HEIGHT = (HEIGHT + MARGIN) * (ROW_COUNT)
 WINDOW_TITLE = "Tetris"
 
 colors = [
@@ -112,7 +112,6 @@ def new_board(rows, cols):
     # Add a bottom border of 1's
     if rows == ROW_COUNT:
         board += [[1 for _x in range(cols)]]
-        print(len(board), len(board[0]))
     return board
 
 
@@ -132,6 +131,7 @@ class GameView(arcade.View):
         self.board_preview_sprite_list = None
 
         self.stone = None
+        self.next_stone = None
         self.stone_x = 0
         self.stone_y = 0
 
@@ -145,10 +145,24 @@ class GameView(arcade.View):
         If we immediately collide, then game-over.
         """
         if not self.stones:
-            self.stones = tetris_shapes[:]
+            self.stones = [random.choice(tetris_shapes) for _ in range(3)]
 
-        random.shuffle(self.stones)
-        self.stone = self.stones.pop()
+        # Get the first stone from the bag and call the next stone from the bag
+        self.stone = self.stones.pop(0)
+        self.next_stone = self.stones[0]
+        print(self.stones, "|", self.next_stone)
+        self.stones.append(random.choice(tetris_shapes))
+
+        # Refresh the preview board and replace it with the next stone
+        self.board_preview = new_board(PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT)
+        x_offset = 0
+        if len(self.next_stone[0]) == 2:
+            x_offset = 1
+        self.board_preview = join_matrixes(
+            self.board_preview, self.next_stone, (x_offset, 0)
+        )
+        self.update_board()
+
         self.stone_x = int(COLUMN_COUNT / 2 - len(self.stone[0]) / 2)
         self.stone_y = 0
 
@@ -209,6 +223,7 @@ class GameView(arcade.View):
                 self.board = join_matrixes(
                     self.board, self.stone, (self.stone_x, self.stone_y)
                 )
+
                 while True:
                     for i, row in enumerate(self.board[:-1]):
                         if 0 not in row:
