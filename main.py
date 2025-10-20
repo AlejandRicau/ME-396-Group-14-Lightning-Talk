@@ -140,7 +140,8 @@ class GameView(arcade.View):
         self.ghost_x = self.stone_x  # coordinate for landing prediction
         self.ghost_y = 0
 
-        self.stones = []  # query of stone to pick from
+        self.stones = tetris_shapes.copy()  # query of stone to pick from
+        random.shuffle(self.stones)
 
     def new_stone(self):
         """
@@ -149,15 +150,13 @@ class GameView(arcade.View):
         Then set the stone's location to the top.
         If we immediately collide, then game-over.
         """
+
+        self.stone = self.stones.pop(0)  # get the first 1 and remove it from the list
         if not self.stones:  # Implemented bag system, so that no two pieces are repeated after each other.
             self.stones = tetris_shapes.copy()
             random.shuffle(self.stones)
-
-        self.stone = self.stones.pop(0)  # get the first 1 and remove it from the list
         self.next_stone = self.stones[0]  # set the next one to be the preview
-        self.stones.append(
-            random.choice(tetris_shapes)
-        )  # add 1 more stone to the bag to maintain a count of 3
+
 
         self.board_preview = new_board(
             PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT
