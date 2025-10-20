@@ -149,8 +149,9 @@ class GameView(arcade.View):
         Then set the stone's location to the top.
         If we immediately collide, then game-over.
         """
-        if not self.stones:  # add 3 random stones to the bag of choice
-            self.stones = [random.choice(tetris_shapes) for _ in range(3)]
+        if not self.stones:  # Implemented bag system, so that no two pieces are repeated after each other.
+            self.stones = tetris_shapes.copy()
+            random.shuffle(self.stones)
 
         self.stone = self.stones.pop(0)  # get the first 1 and remove it from the list
         self.next_stone = self.stones[0]  # set the next one to be the preview
