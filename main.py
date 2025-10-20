@@ -294,33 +294,29 @@ class GameView(arcade.View):
             if not check_collision(self.board, self.stone, (new_x, self.stone_y)):
                 self.stone_x = new_x
 
-    def start_game(self):
-        pass
-
-    def pause_game(self):
-        pass
-
-    def resume_game(self):
-        pass
-
     def get_state(self):
         return {"board": None, "score": 0, "level": 1, "lines": 0, "next_queue": []}
+
+    def update_store_board(self):
+        self.board_stored = new_board(
+            PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT
+        )  # refresh the board
+        x_offset = 0
+        if self.stored_stone is not None and (self.stored_stone[0]) == 2:  # make the 2x2 stone to show in the middle
+            x_offset = 1
+        if self.stored_stone is not None:
+            self.board_stored = (
+                join_matrixes(  # join the stores stone with the small preview board
+                    self.board_stored, self.stored_stone, (x_offset, 0)
+                )
+            )
 
     def store_stone(self): # Method to store current stone.
         temp_stored_stone = self.stone
         self.new_stone(store=True) # create a new stone, call the store flag to activate related logic
         self.stored_stone = temp_stored_stone
-        self.board_stored = new_board(
-            PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT
-        )  # refresh the board
-        x_offset = 0
-        if len(self.stored_stone[0]) == 2:  # make the 2x2 stone to show in the middle
-            x_offset = 1
-        self.board_stored = (
-            join_matrixes(  # join the preview stone with the small preview board
-                self.board_stored, self.stored_stone, (x_offset, 0)
-            )
-        )
+        self.update_store_board()
+        self.update_board()
 
 
     def on_key_press(self, key, modifiers):
@@ -418,6 +414,7 @@ class GameView(arcade.View):
                 i = row_idx * PREVIEW_COL_COUNT + col_idx
                 self.board_preview_sprite_list[i].set_texture(cell_value)
 
+
         for row_idx, row_data in enumerate(self.board_stored):
             for col_idx, cell_value in enumerate(row_data):
                 i = row_idx * PREVIEW_COL_COUNT + col_idx
@@ -442,11 +439,45 @@ class GameView(arcade.View):
         return ghost_y
 
 
+class StartMenuView(arcade.View):
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        self.window.background_color = arcade.csscolor.DARK_SLATE_BLUE
+
+        self.title_text = arcade.Text(
+            "A Crude Tetris Copy",
+            x=self.window.width / 2,
+            y=self.window.height / 2,
+            color=arcade.color.WHITE,
+            font_size=30,
+            anchor_x="center",
+        )
+        self.instruction_text = arcade.Text(
+            "Click to play",
+            x=self.window.width / 2,
+            y=self.window.height / 2 - 75,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="center",
+        )
+
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        self.title_text.draw()
+        self.instruction_text.draw()
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """ If the user presses the mouse button, start the game. """
+        game_view = GameView()
+        game_view.setup()
+        self.window.show_view(game_view)
+
+
 def main():
     """Create the game window, setup, run"""
     window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE)
-    game = GameView()
-    game.setup()
+    game = StartMenuView()
 
     window.show_view(game)
     arcade.run()
