@@ -126,11 +126,13 @@ class GameView(arcade.View):
 
         self.board = None  # init of main board
         self.board_preview = None  # init of the preview board
+        self.board_stored = None
         self.start_frame = 0
         self.game_over = False
         self.paused = False
         self.board_sprite_list = None  # init of board blocks/boxes
         self.board_preview_sprite_list = None  # init of preview blocks/boxes
+        self.board_stored_sprite_list = None # init of stored stone region
 
         self.stone = None  # current stone in hand
         self.next_stone = None  # next stone in line for preview
@@ -151,7 +153,7 @@ class GameView(arcade.View):
         Then set the stone's location to the top.
         If we immediately collide, then game-over.
         """
-        if store:
+        if store: # logic for storage of a piece.
             if self.stored_stone is None:
                 self.stone = self.stones.pop(0)
             else:
@@ -190,10 +192,12 @@ class GameView(arcade.View):
         """Set up the game variables, board and sprite list"""
         self.board = new_board(ROW_COUNT, COLUMN_COUNT)
         self.board_preview = new_board(PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT)
+        self.board_stored = new_board(PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT)
         self.start_frame = GLOBAL_CLOCK.ticks
 
         self.board_sprite_list = arcade.SpriteList()
         self.board_preview_sprite_list = arcade.SpriteList()
+        self.board_stored_sprite_list = arcade.SpriteList()
 
         # spritify the main board
         for row in range(len(self.board)):
@@ -220,6 +224,19 @@ class GameView(arcade.View):
                 )
 
                 self.board_preview_sprite_list.append(sprite)
+
+        # spritify the stored stone board
+        for row in range(len(self.board_stored)):
+            for column in range(len(self.board_stored[0])):
+                sprite = arcade.Sprite(texture_list[0])
+                sprite.textures = texture_list
+                sprite.center_x = (
+                        (MARGIN + WIDTH) * (COLUMN_COUNT + 1 + column) + MARGIN + WIDTH // 2
+                )
+                sprite.center_y = (
+                        WINDOW_HEIGHT - (MARGIN + HEIGHT) * (2 + row +PREVIEW_ROW_COUNT) + MARGIN + HEIGHT // 2
+                )
+                self.board_stored_sprite_list.append(sprite)
 
         self.new_stone()
         self.update_board()
@@ -289,10 +306,22 @@ class GameView(arcade.View):
     def get_state(self):
         return {"board": None, "score": 0, "level": 1, "lines": 0, "next_queue": []}
 
-    def store_stone(self):
+    def store_stone(self): # Method to store current stone.
         temp_stored_stone = self.stone
-        self.new_stone(store=True)
+        self.new_stone(store=True) # create a new stone, call the store flag to activate related logic
         self.stored_stone = temp_stored_stone
+        self.board_stored = new_board(
+            PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT
+        )  # refresh the board
+        x_offset = 0
+        if len(self.stored_stone[0]) == 2:  # make the 2x2 stone to show in the middle
+            x_offset = 1
+        self.board_stored = (
+            join_matrixes(  # join the preview stone with the small preview board
+                self.board_stored, self.stored_stone, (x_offset, 0)
+            )
+        )
+
 
     def on_key_press(self, key, modifiers):
         """
@@ -377,7 +406,7 @@ class GameView(arcade.View):
         """
         Update the sprite list to reflect the contents of the 2d grid
         """
-        # update main board prites
+        # update main board sprites
         for row_idx, row_data in enumerate(self.board):
             for col_idx, cell_value in enumerate(row_data):
                 i = row_idx * COLUMN_COUNT + col_idx
@@ -389,6 +418,11 @@ class GameView(arcade.View):
                 i = row_idx * PREVIEW_COL_COUNT + col_idx
                 self.board_preview_sprite_list[i].set_texture(cell_value)
 
+        for row_idx, row_data in enumerate(self.board_stored):
+            for col_idx, cell_value in enumerate(row_data):
+                i = row_idx * PREVIEW_COL_COUNT + col_idx
+                self.board_stored_sprite_list[i].set_texture(cell_value)
+
     def on_draw(self):
         """Render the screen."""
 
@@ -396,6 +430,7 @@ class GameView(arcade.View):
         self.clear()
         self.board_sprite_list.draw()
         self.board_preview_sprite_list.draw()
+        self.board_stored_sprite_list.draw()
         self.draw_grid(self.stone, self.stone_x, self.stone_y)
         self.draw_ghost()  # This is for the landing prediction
 
