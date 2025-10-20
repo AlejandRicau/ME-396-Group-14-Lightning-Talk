@@ -136,6 +136,7 @@ class GameView(arcade.View):
         self.next_stone = None  # next stone in line for preview
         self.stone_x = 0  # top left coordinate of stone (empty included)
         self.stone_y = 0
+        self.stored_stone = None
 
         self.ghost_x = self.stone_x  # coordinate for landing prediction
         self.ghost_y = 0
@@ -143,15 +144,20 @@ class GameView(arcade.View):
         self.stones = tetris_shapes.copy()  # query of stone to pick from
         random.shuffle(self.stones)
 
-    def new_stone(self):
+    def new_stone(self,store=False):
         """
         Randomly grab a new stone from the bag of stones,
         if the bag is empty refill the bag and shuffle it.
         Then set the stone's location to the top.
         If we immediately collide, then game-over.
         """
-
-        self.stone = self.stones.pop(0)  # get the first 1 and remove it from the list
+        if store:
+            if self.stored_stone is None:
+                self.stone = self.stones.pop(0)
+            else:
+                self.stone = self.stored_stone
+        else:
+            self.stone = self.stones.pop(0)  # get the first 1 and remove it from the list
         if not self.stones:  # Implemented bag system, so that no two pieces are repeated after each other.
             self.stones = tetris_shapes.copy()
             random.shuffle(self.stones)
@@ -283,6 +289,11 @@ class GameView(arcade.View):
     def get_state(self):
         return {"board": None, "score": 0, "level": 1, "lines": 0, "next_queue": []}
 
+    def store_stone(self):
+        temp_stored_stone = self.stone
+        self.new_stone(store=True)
+        self.stored_stone = temp_stored_stone
+
     def on_key_press(self, key, modifiers):
         """
         Handle user key presses
@@ -300,6 +311,8 @@ class GameView(arcade.View):
             self.rotate_stone()
         elif key == arcade.key.DOWN:
             self.drop()
+        elif key == arcade.key.SPACE:
+            self.store_stone()
 
         # update the position of ghost piece
         self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
