@@ -187,6 +187,8 @@ class GameView(arcade.View):
 
         if check_collision(self.board, self.stone, (self.stone_x, self.stone_y)):
             self.game_over = True
+            game_view = GameOverView()
+            self.window.show_view(game_view)
 
     def setup(self):
         """Set up the game variables, board and sprite list"""
@@ -473,13 +475,45 @@ class StartMenuView(arcade.View):
         game_view.setup()
         self.window.show_view(game_view)
 
+class GameOverView(arcade.View):
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        self.window.background_color = arcade.csscolor.BLACK
+
+        # Reset the viewport, necessary if we have a scrolling game and we need
+        # to reset the viewport back to the start so we can see what we draw.
+        self.title_text = arcade.Text(
+            "Game Over",
+            x=self.window.width / 2,
+            y=self.window.height / 2,
+            color=arcade.color.WHITE,
+            font_size=50,
+            anchor_x="center",
+        )
+        self.instruction_text = arcade.Text(
+            "Better luck next time!",
+            x=self.window.width / 2,
+            y=self.window.height / 2-75,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="center",
+        )
+
+    def on_draw(self):
+        """ Draw this view """
+        self.clear()
+        self.title_text.draw()
+        self.instruction_text.draw()
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """ If the user presses the mouse button, close the game. """
+        self.window.close()
 
 def main():
     """Create the game window, setup, run"""
     window = arcade.Window(WINDOW_WIDTH, WINDOW_HEIGHT, WINDOW_TITLE)
-    game = StartMenuView()
-
-    window.show_view(game)
+    game_view = StartMenuView()
+    window.show_view(game_view)
     arcade.run()
 
 
