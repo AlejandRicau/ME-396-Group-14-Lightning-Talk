@@ -38,10 +38,6 @@ class GameView(arcade.View):
         self.stones = tetris_shapes.copy()  # query of stone to pick from
         random.shuffle(self.stones)
 
-        # Load Sounds
-        self.move_sound = arcade.load_sound('move.wav')
-        self.drop_sound = arcade.load_sound('drop.wav')
-
     def new_stone(self,store=False):
         """
         Randomly grab a new stone from the bag of stones,
@@ -228,15 +224,12 @@ class GameView(arcade.View):
         # actual keyboard response
         if key == arcade.key.LEFT:
             self.move(-1)
-            arcade.play_sound(self.move_sound)
         elif key == arcade.key.RIGHT:
             self.move(1)
-            arcade.play_sound(self.move_sound)
         elif key == arcade.key.UP:
             self.rotate_stone()
         elif key == arcade.key.DOWN:
             self.drop()
-            arcade.play_sound(self.drop_sound)
         elif key == arcade.key.SPACE:
             self.store_stone()
 
