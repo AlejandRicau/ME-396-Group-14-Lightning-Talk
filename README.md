@@ -7,4 +7,4 @@ This repository contains a small demonstration of a game developed using the arc
 * Move the piece with the left and right arrow keys.
 * Drop the piece faster with the down arrow key.
 * Rotate the piece with the up arrow key.
-* Store a peice or exchnage with saved piece using teh spacebar.
+* Store a peice or exchnage with saved piece using the spacebar.
