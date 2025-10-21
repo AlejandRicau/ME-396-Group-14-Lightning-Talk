@@ -1,3 +1,5 @@
+import arcade
+
 from helpers import *
 from gameOverView import GameOverView
 
@@ -7,7 +9,7 @@ class GameView(arcade.View):
     def __init__(self):
         super().__init__()
         self.window.background_color = arcade.color.WHITE
-        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+        self.crt_filter = CRTFilter(WINDOW_WIDTH*2, WINDOW_HEIGHT*2,
                                     resolution_down_scale=1.0,
                                     hard_scan=-8.0,
                                     hard_pix=-3.0,
@@ -37,6 +39,10 @@ class GameView(arcade.View):
 
         self.stones = tetris_shapes.copy()  # query of stone to pick from
         random.shuffle(self.stones)
+
+        # load sounds
+        self.bgm = arcade.load_sound('sounds/BGM.mp3')
+        self.bgm_player = None
 
     def new_stone(self,store=False):
         """
@@ -79,6 +85,7 @@ class GameView(arcade.View):
 
         if check_collision(self.board, self.stone, (self.stone_x, self.stone_y)):
             self.game_over = True
+            self.bgm.stop(self.bgm_player)
             game_view = GameOverView()
             self.window.show_view(game_view)
 
@@ -134,6 +141,7 @@ class GameView(arcade.View):
 
         self.new_stone()
         self.update_board()
+        self.bgm_player = self.bgm.play(loop=True)
 
     def drop(self):
         """

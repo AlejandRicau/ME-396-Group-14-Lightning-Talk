@@ -5,7 +5,7 @@ class StartMenuView(arcade.View):
     def __init__(self):
         super().__init__()
         # Create the crt filter
-        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+        self.crt_filter = CRTFilter(WINDOW_WIDTH*2, WINDOW_HEIGHT*2,
                                     resolution_down_scale=1.0,
                                     hard_scan=-8.0,
                                     hard_pix=-3.0,
