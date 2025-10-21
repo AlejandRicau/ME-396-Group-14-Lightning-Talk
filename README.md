@@ -1,6 +1,10 @@
-# ME-396-Group-14-Lightning-Talk
-* Repo for Lighting Talk
-* Discord Channel is this (temporary): https://discord.gg/fxGvMtq8
+# ME 396 Group 14 (TBD) Lightning Talk 
 
-* We will be creating a simple functional version of tetris using the python arcade library.
-* documentation for the library: https://api.arcade.academy/en/latest/
+This repository contains a small demonstration of a game developed using the arcade framework. It is a small clone of tetris.
+
+*How to Play*
+
+* Move the piece with the left and right arrow keys.
+* Drop the piece faster with the down arrow key.
+* Rotate the piece with the up arrow key.
+* Store a peice or exchnage with saved piece using teh spacebar.
