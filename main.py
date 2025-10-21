@@ -10,8 +10,14 @@ python -m arcade.examples.tetris
 
 import arcade
 from arcade.clock import GLOBAL_CLOCK
+from arcade.experimental.crt_filter import CRTFilter
+from pyglet.math import Vec2
 import random
 import PIL
+
+# Set if CRT Mode is on
+CRT_FILTER_ON = True
+
 
 # Set how many rows and columns we will have
 ROW_COUNT = 24
@@ -123,6 +129,14 @@ class GameView(arcade.View):
     def __init__(self):
         super().__init__()
         self.window.background_color = arcade.color.WHITE
+        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+                                    resolution_down_scale=1.0,
+                                    hard_scan=-8.0,
+                                    hard_pix=-3.0,
+                                    display_warp=Vec2(1.0 / 32.0, 1.0 / 24.0),
+                                    mask_dark=0.5,
+                                    mask_light=1.5)
+        self.filter_on = CRT_FILTER_ON
 
         self.board = None  # init of main board
         self.board_preview = None  # init of the preview board
@@ -426,12 +440,25 @@ class GameView(arcade.View):
         """Render the screen."""
 
         # This command has to happen before we start drawing
-        self.clear()
-        self.board_sprite_list.draw()
-        self.board_preview_sprite_list.draw()
-        self.board_stored_sprite_list.draw()
-        self.draw_grid(self.stone, self.stone_x, self.stone_y)
-        self.draw_ghost()  # This is for the landing prediction
+        if self.filter_on:
+            self.crt_filter.use()
+            self.crt_filter.clear()
+            self.board_sprite_list.draw()
+            self.board_preview_sprite_list.draw()
+            self.board_stored_sprite_list.draw()
+            self.draw_grid(self.stone, self.stone_x, self.stone_y)
+            self.draw_ghost()  # This is for the landing prediction
+
+            self.window.use()
+            self.clear()
+            self.crt_filter.draw()
+        else:
+            self.clear()
+            self.board_sprite_list.draw()
+            self.board_preview_sprite_list.draw()
+            self.board_stored_sprite_list.draw()
+            self.draw_grid(self.stone, self.stone_x, self.stone_y)
+            self.draw_ghost()  # This is for the landing prediction
 
     def ghost_piece_position(self):
         """Calculate the position of the ghost piece."""
@@ -442,6 +469,18 @@ class GameView(arcade.View):
 
 
 class StartMenuView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        # Create the crt filter
+        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+                                    resolution_down_scale=1.0,
+                                    hard_scan=-8.0,
+                                    hard_pix=-3.0,
+                                    display_warp=Vec2(1.0 / 32.0, 1.0 / 24.0),
+                                    mask_dark=0.5,
+                                    mask_light=1.5)
+        self.filter_on = CRT_FILTER_ON
+
     def on_show_view(self):
         """ This is run once when we switch to this view """
         self.window.background_color = arcade.csscolor.DARK_SLATE_BLUE
@@ -465,9 +504,20 @@ class StartMenuView(arcade.View):
 
     def on_draw(self):
         """ Draw this view """
-        self.clear()
-        self.title_text.draw()
-        self.instruction_text.draw()
+        if self.filter_on:
+            self.crt_filter.use()
+            self.crt_filter.clear()
+            self.title_text.draw()
+            self.instruction_text.draw()
+
+            self.window.use()
+            self.clear()
+            self.crt_filter.draw()
+
+        else:
+            self.clear()
+            self.title_text.draw()
+            self.instruction_text.draw()
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, start the game. """
@@ -476,6 +526,17 @@ class StartMenuView(arcade.View):
         self.window.show_view(game_view)
 
 class GameOverView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        # Create the crt filter
+        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+                                    resolution_down_scale=1.0,
+                                    hard_scan=-8.0,
+                                    hard_pix=-3.0,
+                                    display_warp=Vec2(1.0 / 32.0, 1.0 / 24.0),
+                                    mask_dark=0.5,
+                                    mask_light=1.5)
+        self.filter_on = CRT_FILTER_ON
     def on_show_view(self):
         """ This is run once when we switch to this view """
         self.window.background_color = arcade.csscolor.BLACK
@@ -501,9 +562,20 @@ class GameOverView(arcade.View):
 
     def on_draw(self):
         """ Draw this view """
-        self.clear()
-        self.title_text.draw()
-        self.instruction_text.draw()
+        if self.filter_on:
+            self.crt_filter.use()
+            self.crt_filter.clear()
+            self.title_text.draw()
+            self.instruction_text.draw()
+
+            self.window.use()
+            self.clear()
+            self.crt_filter.draw()
+
+        else:
+            self.clear()
+            self.title_text.draw()
+            self.instruction_text.draw()
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, close the game. """
