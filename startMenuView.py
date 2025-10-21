@@ -1,0 +1,59 @@
+from helpers import *
+from gameView import GameView
+
+class StartMenuView(arcade.View):
+    def __init__(self):
+        super().__init__()
+        # Create the crt filter
+        self.crt_filter = CRTFilter(WINDOW_WIDTH, WINDOW_HEIGHT,
+                                    resolution_down_scale=1.0,
+                                    hard_scan=-8.0,
+                                    hard_pix=-3.0,
+                                    display_warp=Vec2(1.0 / 32.0, 1.0 / 24.0),
+                                    mask_dark=0.5,
+                                    mask_light=1.5)
+        self.filter_on = CRT_FILTER_ON
+
+    def on_show_view(self):
+        """ This is run once when we switch to this view """
+        self.window.background_color = arcade.csscolor.DARK_SLATE_BLUE
+
+        self.title_text = arcade.Text(
+            "A Crude Tetris Copy",
+            x=self.window.width / 2,
+            y=self.window.height / 2,
+            color=arcade.color.WHITE,
+            font_size=30,
+            anchor_x="center",
+        )
+        self.instruction_text = arcade.Text(
+            "Click to play",
+            x=self.window.width / 2,
+            y=self.window.height / 2 - 75,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="center",
+        )
+
+    def on_draw(self):
+        """ Draw this view """
+        if self.filter_on:
+            self.crt_filter.use()
+            self.crt_filter.clear()
+            self.title_text.draw()
+            self.instruction_text.draw()
+
+            self.window.use()
+            self.clear()
+            self.crt_filter.draw()
+
+        else:
+            self.clear()
+            self.title_text.draw()
+            self.instruction_text.draw()
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """ If the user presses the mouse button, start the game. """
+        game_view = GameView()
+        game_view.setup()
+        self.window.show_view(game_view)
