@@ -1,6 +1,6 @@
 # ME 396 Group 14 (TBD) Lightning Talk 
 
-This repository contains a small demonstration of a game developed using the arcade framework. It is a small clone of tetris.
+This repository contains a small demonstration of the arcade game development library for python. It is a small clone of tetris.
 
 *How to Play*
 
