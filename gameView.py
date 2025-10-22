@@ -230,15 +230,20 @@ class GameView(arcade.View):
         )  # refresh the board
         x_offset = 0
         piece_id = 0
+
+        # see what piece was stored
         if self.stored_stone is not None:
             piece_id = set(self.stored_stone[0])
             piece_id.discard(0)
             piece_id = piece_id.pop()
-        if self.stored_stone is not None and piece_id == 2:  # make the 2x2 stone to show in the middle
+
+        if self.stored_stone is not None and piece_id == 7:  # make the 2x2 stone to show in the middle
             x_offset = 1
+
         if self.stored_stone is not None:
             self.board_stored = (
                 join_matrixes(  # join the stores stone with the small preview board
+                    # make sure to use the non-rotated version of the piece so no out of bounds error is thrown
                     self.board_stored, tetris_shapes[piece_id-1], (x_offset, 0)
                 )
             )
