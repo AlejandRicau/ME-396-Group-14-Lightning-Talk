@@ -23,6 +23,8 @@ WINDOW_WIDTH = (WIDTH + MARGIN) * (PREVIEW_COL_COUNT + COLUMN_COUNT) + MARGIN
 WINDOW_HEIGHT = (HEIGHT + MARGIN) * (ROW_COUNT)
 WINDOW_TITLE = "Tetris"
 
+BORDER_WIDTH = 4 # in pixels
+
 colors = [  # the last entry is the transparency of the color
     (0, 0, 0, 255),
     (255, 0, 0, 255),

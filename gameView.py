@@ -1,4 +1,4 @@
-import arcade
+import arcade.key
 
 from helpers import *
 from gameOverView import GameOverView
@@ -8,12 +8,12 @@ class GameView(arcade.View):
 
     def __init__(self):
         super().__init__()
-        self.window.background_color = arcade.color.WHITE
+        self.window.background_color = arcade.color.BLACK
         self.crt_filter = CRTFilter(WINDOW_WIDTH*2, WINDOW_HEIGHT*2,
                                     resolution_down_scale=1.0,
                                     hard_scan=-8.0,
                                     hard_pix=-3.0,
-                                    display_warp=Vec2(1.0 / 32.0, 1.0 / 24.0),
+                                    display_warp=Vec2(1.0 / 100.0, 1.0 / 100.0),
                                     mask_dark=0.5,
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
@@ -43,6 +43,24 @@ class GameView(arcade.View):
         # load sounds
         self.bgm = arcade.load_sound('sounds/BGM.mp3')
         self.bgm_player = None
+
+        self.move_sound = arcade.load_sound('sounds/56.mp3')
+        self.move_sound_player = None
+
+        self.drop_sound = arcade.load_sound('sounds/57.mp3')
+        self.drop_sound_player = None
+
+        self.stone_fallen_sound = arcade.load_sound('sounds/52.mp3')
+        self.stone_fallen_sound_player = None
+
+        self.line_clear_sound = arcade.load_sound('sounds/51.mp3')
+        self.line_clear_sound_player = None
+
+        self.rotate_sound = arcade.load_sound('sounds/80.mp3')
+        self.rotate_sound_player = None
+
+        self.store_sound = arcade.load_sound('sounds/78.mp3')
+        self.store_sound_player = None
 
     def new_stone(self,store=False):
         """
@@ -121,7 +139,7 @@ class GameView(arcade.View):
                     (MARGIN + WIDTH) * (COLUMN_COUNT + 1 + column) + MARGIN + WIDTH // 2
                 )
                 sprite.center_y = (
-                    WINDOW_HEIGHT - (MARGIN + HEIGHT) * (1 + row) + MARGIN + HEIGHT // 2
+                    WINDOW_HEIGHT - (MARGIN + HEIGHT) * (3 + row) + MARGIN + HEIGHT // 2
                 )
 
                 self.board_preview_sprite_list.append(sprite)
@@ -135,9 +153,11 @@ class GameView(arcade.View):
                         (MARGIN + WIDTH) * (COLUMN_COUNT + 1 + column) + MARGIN + WIDTH // 2
                 )
                 sprite.center_y = (
-                        WINDOW_HEIGHT - (MARGIN + HEIGHT) * (2 + row +PREVIEW_ROW_COUNT) + MARGIN + HEIGHT // 2
+                        WINDOW_HEIGHT - (MARGIN + HEIGHT) * (6 + row +PREVIEW_ROW_COUNT) + MARGIN + HEIGHT // 2
                 )
                 self.board_stored_sprite_list.append(sprite)
+
+
 
         self.new_stone()
         self.update_board()
@@ -164,9 +184,12 @@ class GameView(arcade.View):
                     for i, row in enumerate(self.board[:-1]):
                         if 0 not in row:  # remove row is it is filled
                             self.board = remove_row(self.board, i)
+                            self.line_clear_sound.play()
                             break
                     else:
+                        self.stone_fallen_sound.play()
                         break
+
                 self.update_board()
                 self.new_stone()
 
@@ -230,16 +253,30 @@ class GameView(arcade.View):
         or drop down
         """
         # actual keyboard response
-        if key == arcade.key.LEFT:
-            self.move(-1)
-        elif key == arcade.key.RIGHT:
-            self.move(1)
-        elif key == arcade.key.UP:
-            self.rotate_stone()
-        elif key == arcade.key.DOWN:
-            self.drop()
-        elif key == arcade.key.SPACE:
-            self.store_stone()
+        if not self.paused:
+            if key == arcade.key.LEFT:
+                self.move(-1)
+                self.move_sound_player = self.move_sound.play()
+            elif key == arcade.key.RIGHT:
+                self.move(1)
+                self.move_sound_player = self.move_sound.play()
+            elif key == arcade.key.UP:
+                self.rotate_stone()
+                self.rotate_sound_player = self.rotate_sound.play()
+            elif key == arcade.key.DOWN:
+                self.drop()
+                self.drop_sound_player = self.drop_sound.play()
+            elif key == arcade.key.SPACE:
+                self.store_stone()
+                self.store_sound_player = self.store_sound.play()
+
+        if key == arcade.key.P:
+            if self.paused is True:
+                self.paused = False
+                self.bgm_player.play()
+            else:
+                self.paused = True
+                self.bgm_player.pause()
 
         # update the position of ghost piece
         self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
@@ -334,6 +371,10 @@ class GameView(arcade.View):
             self.board_stored_sprite_list.draw()
             self.draw_grid(self.stone, self.stone_x, self.stone_y)
             self.draw_ghost()  # This is for the landing prediction
+            arcade.draw_rect_outline(
+                arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2 * MARGIN)),
+                arcade.color.WHITE, BORDER_WIDTH)
+
 
             self.window.use()
             self.clear()
@@ -345,6 +386,10 @@ class GameView(arcade.View):
             self.board_stored_sprite_list.draw()
             self.draw_grid(self.stone, self.stone_x, self.stone_y)
             self.draw_ghost()  # This is for the landing prediction
+
+            arcade.draw_rect_outline(
+                arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2*MARGIN)),
+                arcade.color.WHITE, BORDER_WIDTH)
 
     def ghost_piece_position(self):
         """Calculate the position of the ghost piece."""
