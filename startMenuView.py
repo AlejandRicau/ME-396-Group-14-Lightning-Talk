@@ -1,3 +1,5 @@
+import arcade
+
 from helpers import *
 from gameView import GameView
 
@@ -13,6 +15,11 @@ class StartMenuView(arcade.View):
                                     mask_dark=0.5,
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
+
+        self.bgm = arcade.load_sound('sounds/08 BGM #08.mp3')
+        self.bgm_player = None
+
+        self.start_sound = arcade.load_sound('sounds/33 Jingle #03.mp3')
 
     def on_show_view(self):
         """ This is run once when we switch to this view """
@@ -34,6 +41,7 @@ class StartMenuView(arcade.View):
             font_size=20,
             anchor_x="center",
         )
+        self.bgm_player = self.bgm.play()
 
     def on_draw(self):
         """ Draw this view """
@@ -54,6 +62,8 @@ class StartMenuView(arcade.View):
 
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, start the game. """
+        self.bgm_player.pause()
+        self.start_sound.play()
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)

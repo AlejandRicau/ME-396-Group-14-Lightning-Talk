@@ -1,3 +1,5 @@
+import arcade
+
 from helpers import *
 
 class GameOverView(arcade.View):
@@ -12,6 +14,8 @@ class GameOverView(arcade.View):
                                     mask_dark=0.5,
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
+        self.bgm = arcade.load_sound('sounds/34 Jingle #04.mp3')
+
     def on_show_view(self):
         """ This is run once when we switch to this view """
         self.window.background_color = arcade.csscolor.BLACK
@@ -34,6 +38,7 @@ class GameOverView(arcade.View):
             font_size=20,
             anchor_x="center",
         )
+        self.bgm.play()
 
     def on_draw(self):
         """ Draw this view """
