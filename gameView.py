@@ -61,25 +61,25 @@ class GameView(arcade.View):
         random.shuffle(self.stones)
 
         # load sounds
-        self.bgm = arcade.load_sound('sounds/BGM.mp3')
+        self.bgm = arcade.load_sound('sounds/main_bgm.mp3')
         self.bgm_player = None
 
-        self.move_sound = arcade.load_sound('sounds/56.mp3')
+        self.move_sound = arcade.load_sound('sounds/move.mp3')
         self.move_sound_player = None
 
-        self.drop_sound = arcade.load_sound('sounds/57.mp3')
+        self.drop_sound = arcade.load_sound('sounds/drop.mp3')
         self.drop_sound_player = None
 
-        self.stone_fallen_sound = arcade.load_sound('sounds/52.mp3')
+        self.stone_fallen_sound = arcade.load_sound('sounds/fall.mp3')
         self.stone_fallen_sound_player = None
 
-        self.line_clear_sound = arcade.load_sound('sounds/51.mp3')
+        self.line_clear_sound = arcade.load_sound('sounds/clear_line.mp3')
         self.line_clear_sound_player = None
 
-        self.rotate_sound = arcade.load_sound('sounds/80.mp3')
+        self.rotate_sound = arcade.load_sound('sounds/rotate.mp3')
         self.rotate_sound_player = None
 
-        self.store_sound = arcade.load_sound('sounds/78.mp3')
+        self.store_sound = arcade.load_sound('sounds/store.mp3')
         self.store_sound_player = None
 
     def new_stone(self,store=False):

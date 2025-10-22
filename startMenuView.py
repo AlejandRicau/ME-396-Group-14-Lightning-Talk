@@ -16,10 +16,10 @@ class StartMenuView(arcade.View):
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
 
-        self.bgm = arcade.load_sound('sounds/08 BGM #08.mp3')
+        self.bgm = arcade.load_sound('sounds/start_menu.mp3')
         self.bgm_player = None
 
-        self.start_sound = arcade.load_sound('sounds/33 Jingle #03.mp3')
+        self.start_sound = arcade.load_sound('sounds/start_game.mp3')
 
     def on_show_view(self):
         """ This is run once when we switch to this view """

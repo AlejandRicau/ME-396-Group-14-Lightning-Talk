@@ -14,7 +14,7 @@ class GameOverView(arcade.View):
                                     mask_dark=0.5,
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
-        self.bgm = arcade.load_sound('sounds/34 Jingle #04.mp3')
+        self.bgm = arcade.load_sound('sounds/game_over.mp3')
 
     def on_show_view(self):
         """ This is run once when we switch to this view """
