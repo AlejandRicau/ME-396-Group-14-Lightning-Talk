@@ -1,3 +1,5 @@
+from enum import unique
+
 import arcade.key
 
 from helpers import *
@@ -227,12 +229,17 @@ class GameView(arcade.View):
             PREVIEW_ROW_COUNT, PREVIEW_COL_COUNT
         )  # refresh the board
         x_offset = 0
-        if self.stored_stone is not None and (self.stored_stone[0]) == 2:  # make the 2x2 stone to show in the middle
+        piece_id = 0
+        if self.stored_stone is not None:
+            piece_id = set(self.stored_stone[0])
+            piece_id.discard(0)
+            piece_id = piece_id.pop()
+        if self.stored_stone is not None and piece_id == 2:  # make the 2x2 stone to show in the middle
             x_offset = 1
         if self.stored_stone is not None:
             self.board_stored = (
                 join_matrixes(  # join the stores stone with the small preview board
-                    self.board_stored, self.stored_stone, (x_offset, 0)
+                    self.board_stored, tetris_shapes[piece_id-1], (x_offset, 0)
                 )
             )
 
@@ -271,7 +278,7 @@ class GameView(arcade.View):
                 self.store_sound_player = self.store_sound.play()
 
         if key == arcade.key.P:
-            if self.paused is True:
+            if self.paused:
                 self.paused = False
                 self.bgm_player.play()
             else:
