@@ -20,6 +20,24 @@ class GameView(arcade.View):
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
 
+        self.preview_board_text = arcade.Text(
+            "Next Piece",
+            x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1 ),
+            y=WINDOW_HEIGHT - (MARGIN *2 + HEIGHT),
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="left",
+        )
+
+        self.stored_board_text = arcade.Text(
+            "Stored Piece",
+            x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1),
+            y=WINDOW_HEIGHT - (MARGIN + HEIGHT) * 6,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="left",
+        )
+
         self.board = None  # init of main board
         self.board_preview = None  # init of the preview board
         self.board_stored = None
@@ -383,10 +401,28 @@ class GameView(arcade.View):
             self.board_stored_sprite_list.draw()
             self.draw_grid(self.stone, self.stone_x, self.stone_y)
             self.draw_ghost()  # This is for the landing prediction
+            self.preview_board_text.draw()
+            self.stored_board_text.draw()
+
+            # Draw Bounding box for game area
             arcade.draw_rect_outline(
                 arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2 * MARGIN)),
                 arcade.color.WHITE, BORDER_WIDTH)
 
+            # Draw Bounding box for preview area
+            arcade.draw_rect_outline(
+                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1 ), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 4,
+                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT-1) + MARGIN, (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
+                                 ), arcade.color.WHITE, BORDER_WIDTH
+            )
+
+            # Draw Bounding Box for Storage Area
+            arcade.draw_rect_outline(
+                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 9,
+                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
+                                 (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
+                                 ), arcade.color.WHITE, BORDER_WIDTH
+            )
 
             self.window.use()
             self.clear()
@@ -398,10 +434,29 @@ class GameView(arcade.View):
             self.board_stored_sprite_list.draw()
             self.draw_grid(self.stone, self.stone_x, self.stone_y)
             self.draw_ghost()  # This is for the landing prediction
+            self.preview_board_text.draw()
+            self.stored_board_text.draw()
 
+            # Draw Bounding box for board
             arcade.draw_rect_outline(
                 arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2*MARGIN)),
                 arcade.color.WHITE, BORDER_WIDTH)
+
+            # Draw Bounding box for preview area
+            arcade.draw_rect_outline(
+                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 4,
+                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
+                                 (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
+                                 ), arcade.color.WHITE, BORDER_WIDTH
+            )
+
+            # Draw Bounding Box for Storage Area
+            arcade.draw_rect_outline(
+                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 9,
+                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
+                                 (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
+                                 ), arcade.color.WHITE, BORDER_WIDTH
+            )
 
     def ghost_piece_position(self):
         """Calculate the position of the ghost piece."""
