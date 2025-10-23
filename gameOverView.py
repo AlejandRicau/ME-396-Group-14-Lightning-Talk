@@ -1,8 +1,9 @@
 import arcade
 
 from helpers import *
+from ViewWithGamepadSupport import ViewWithGamepadSupport
 
-class GameOverView(arcade.View):
+class GameOverView(ViewWithGamepadSupport):
     def __init__(self):
         super().__init__()
         # Create the crt filter
@@ -60,3 +61,7 @@ class GameOverView(arcade.View):
     def on_mouse_press(self, _x, _y, _button, _modifiers):
         """ If the user presses the mouse button, close the game. """
         self.window.close()
+
+    def on_button_press(self, ctrl, button_name):
+        if button_name == "start":
+            self.window.close()

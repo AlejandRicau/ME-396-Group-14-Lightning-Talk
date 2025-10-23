@@ -4,8 +4,9 @@ import arcade.key
 
 from helpers import *
 from gameOverView import GameOverView
+from ViewWithGamepadSupport import ViewWithGamepadSupport
 
-class GameView(arcade.View):
+class GameView(ViewWithGamepadSupport):
     """Main application class."""
 
     def __init__(self):
@@ -81,6 +82,15 @@ class GameView(arcade.View):
 
         self.store_sound = arcade.load_sound('sounds/store.mp3')
         self.store_sound_player = None
+
+        self.pause_sound = arcade.load_sound('sounds/pause.mp3')
+        self.pause_sound_player = None
+
+        self.resume_sound = arcade.load_sound('sounds/resume.mp3')
+        self.resume_sound_player = None
+
+        self.hard_drop_sound = arcade.load_sound('sounds/hard_drop.mp3')
+        self.hard_drop_sound_player = None
 
     def new_stone(self,store=False):
         """
@@ -213,6 +223,35 @@ class GameView(arcade.View):
                 self.update_board()
                 self.new_stone()
 
+    def hard_drop(self):
+        """Instantly drop the current stone to its lowest valid position."""
+        if self.game_over or self.paused:
+            return
+
+        # Move the stone down until collision
+        while not check_collision(self.board, self.stone, (self.stone_x, self.stone_y + 1)):
+            self.stone_y += 1
+        self.stone_y += 1
+
+        # Lock the stone in place
+        self.board = join_matrixes(self.board, self.stone, (self.stone_x, self.stone_y))
+
+        # Clear full lines
+        while True:
+            for i, row in enumerate(self.board[:-1]):
+                if 0 not in row:
+                    self.board = remove_row(self.board, i)
+                    self.line_clear_sound.play()
+                    break
+            else:
+                self.stone_fallen_sound.play()
+                break
+
+        # Spawn new stone and update visuals
+        self.update_board()
+        self.new_stone()
+        self.hard_drop_sound_player = self.hard_drop_sound.play()
+
     def rotate_stone(self):
         """Rotate the stone, check collision."""
         if not self.game_over and not self.paused:
@@ -225,12 +264,13 @@ class GameView(arcade.View):
     def on_update(self, delta_time):
         """Update, drop stone if warranted"""
         # This is the mechanism where time progresses
-        if GLOBAL_CLOCK.ticks_since(self.start_frame) % 10 == 0:
+        if GLOBAL_CLOCK.ticks_since(self.start_frame) % 20 == 0:
             self.drop()
 
     def move(self, delta_x):
         """Move the stone back and forth based on delta x."""
         if not self.game_over and not self.paused:
+            self.move_sound_player = self.move_sound.play()
             new_x = self.stone_x + delta_x
             if new_x < 0:
                 new_x = 0
@@ -267,12 +307,22 @@ class GameView(arcade.View):
             )
 
     def store_stone(self): # Method to store current stone.
+        self.store_sound_player = self.store_sound.play()
         temp_stored_stone = self.stone
         self.new_stone(store=True) # create a new stone, call the store flag to activate related logic
         self.stored_stone = temp_stored_stone
         self.update_store_board()
         self.update_board()
 
+    def pause(self):
+        if self.paused:
+            self.paused = False
+            self.resume_sound_player = self.resume_sound.play()
+            self.bgm_player.play()
+        else:
+            self.paused = True
+            self.bgm_player.pause()
+            self.pause_sound_player = self.pause_sound.play()
 
     def on_key_press(self, key, modifiers):
         """
@@ -286,10 +336,8 @@ class GameView(arcade.View):
         if not self.paused:
             if key == arcade.key.LEFT:
                 self.move(-1)
-                self.move_sound_player = self.move_sound.play()
             elif key == arcade.key.RIGHT:
                 self.move(1)
-                self.move_sound_player = self.move_sound.play()
             elif key == arcade.key.UP:
                 self.rotate_stone()
                 self.rotate_sound_player = self.rotate_sound.play()
@@ -298,18 +346,77 @@ class GameView(arcade.View):
                 self.drop_sound_player = self.drop_sound.play()
             elif key == arcade.key.SPACE:
                 self.store_stone()
-                self.store_sound_player = self.store_sound.play()
+            elif key == arcade.key.C:
+                self.hard_drop()
 
         if key == arcade.key.P:
-            if self.paused:
-                self.paused = False
-                self.bgm_player.play()
-            else:
-                self.paused = True
-                self.bgm_player.pause()
+            self.pause()
 
         # update the position of ghost piece
         self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_button_press(self, ctrl, button_name):
+        if not self.paused:
+            if button_name == 'rightshoulder':
+                self.rotate_stone()
+                self.rotate_sound_player = self.rotate_sound.play()
+            elif button_name == 'leftshoulder':
+                for i in range(3):
+                    self.rotate_stone()
+                self.rotate_sound_player = self.rotate_sound.play()
+
+        if button_name == 'start':
+            self.pause()
+
+        # update the position of ghost piece
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_righttrigger_pressed(self):
+        self.store_stone()
+
+    def on_lefttrigger_pressed(self):
+        self.store_stone()
+
+    def on_dpad_left(self):
+        if not self.paused:
+            self.move(-1)
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_leftstick_left(self):
+        if not self.paused:
+            self.move(-1)
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_dpad_right(self):
+        if not self.paused:
+            self.move(1)
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_leftstick_right(self):
+        if not self.paused:
+            self.move(1)
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_dpad_down(self):
+        if not self.paused:
+            self.drop()
+            self.drop_sound_player = self.drop_sound.play()
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_leftstick_down(self):
+        if not self.paused:
+            self.drop()
+            self.drop_sound_player = self.drop_sound.play()
+        self.ghost_x, self.ghost_y = self.stone_x, self.ghost_piece_position()
+
+    def on_dpad_up(self):
+        if not self.paused:
+            self.hard_drop()
+
+    def on_leftstick_up(self):
+        if not self.paused:
+            self.hard_drop()
+
 
     def draw_grid(self, grid, offset_x, offset_y, board_offset_x=0):
         """

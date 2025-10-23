@@ -117,13 +117,13 @@ class ControllerVisualizer(arcade.Window, EventDispatcher):
         # Pressed
         if not is_pressed and value > TRIGGER_THRESHOLD:
             setattr(self, active_attr, True)
-            print(f"🔫 {trig_event_prefix} PRESSED ({value:.2f})")
+            print(f" {trig_event_prefix} PRESSED ({value:.2f})")
             self.dispatch_event(f"on_{trig_event_prefix}_pressed")
 
         # Released
         elif is_pressed and value < TRIGGER_THRESHOLD * 0.8:
             setattr(self, active_attr, False)
-            print(f"🔫 {trig_event_prefix} RELEASED ({value:.2f})")
+            print(f" {trig_event_prefix} RELEASED ({value:.2f})")
             self.dispatch_event(f"on_{trig_event_prefix}_released")
 
     # ---------- Direction computation ----------
@@ -166,11 +166,11 @@ class ControllerVisualizer(arcade.Window, EventDispatcher):
 
         if new_state and new_state != current_state:
             setattr(self, state_attr, new_state)
-            print(f"🚨 {side}stick → {new_state.upper()} event")
+            print(f" {side}stick  {new_state.upper()} event")
             self.dispatch_event(f"on_{side}stick_{new_state}")
         elif new_state is None and current_state is not None:
             setattr(self, state_attr, None)
-            print(f"⚙️  {side}stick → CENTERED event")
+            print(f"⚙  {side}stick  CENTERED event")
             self.dispatch_event(f"on_{side}stick_centered")
 
     # ---------- Drawing ----------
@@ -218,7 +218,7 @@ class ControllerVisualizer(arcade.Window, EventDispatcher):
 # ---------- Example listener ----------
 def example_listener(window: ControllerVisualizer):
     def make_handler(msg):
-        return lambda: print(f"🎯 External handler: {msg}")
+        return lambda: print(f" External handler: {msg}")
 
     mapping = {}
     directions = [

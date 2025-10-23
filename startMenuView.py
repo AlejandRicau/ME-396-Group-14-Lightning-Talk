@@ -2,8 +2,9 @@ import arcade
 
 from helpers import *
 from gameView import GameView
+from ViewWithGamepadSupport import ViewWithGamepadSupport
 
-class StartMenuView(arcade.View):
+class StartMenuView(ViewWithGamepadSupport):
     def __init__(self):
         super().__init__()
         # Create the crt filter
@@ -34,7 +35,7 @@ class StartMenuView(arcade.View):
             anchor_x="center",
         )
         self.instruction_text = arcade.Text(
-            "Click to play",
+            "Click or press start to play",
             x=self.window.width / 2,
             y=self.window.height / 2 - 75,
             color=arcade.color.WHITE,
@@ -60,10 +61,20 @@ class StartMenuView(arcade.View):
             self.title_text.draw()
             self.instruction_text.draw()
 
-    def on_mouse_press(self, _x, _y, _button, _modifiers):
-        """ If the user presses the mouse button, start the game. """
+    def start_game(self):
         self.bgm_player.pause()
         self.start_sound.play()
         game_view = GameView()
         game_view.setup()
         self.window.show_view(game_view)
+
+    def on_mouse_press(self, _x, _y, _button, _modifiers):
+        """ If the user presses the mouse button, start the game. """
+        self.start_game()
+
+    def on_button_press(self, ctrl, button_name):
+        if button_name == "start":
+            self.on_close()
+            self.start_game()
+        elif button_name == "back":
+            self.window.close()

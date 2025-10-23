@@ -3,18 +3,18 @@ from pyglet.math import Vec2
 from pyglet.event import EventDispatcher
 import math
 
-DEAD_ZONE = 0.1
+DEAD_ZONE = 0.2
 TRIGGER_THRESHOLD = 0.6
 
 
-class ViewWithGamepadSupport(arcade.Window, EventDispatcher):
+class ViewWithGamepadSupport(arcade.View, EventDispatcher):
     """
     Base window class providing reusable gamepad support.
     Inherit this for any game view that needs controller input.
     """
 
-    def __init__(self, width=800, height=600, title="View with Gamepad Support"):
-        super().__init__(width, height, title)
+    def __init__(self, window: arcade.Window = None):
+        super().__init__(window)
 
         # ---------------- Controller Setup ----------------
         self.manager = arcade.ControllerManager()
@@ -53,6 +53,10 @@ class ViewWithGamepadSupport(arcade.Window, EventDispatcher):
         for trig in ("lefttrigger", "righttrigger"):
             for state in ("pressed", "released"):
                 self.register_event_type(f"on_{trig}_{state}")
+
+        #D-pad
+        for d in ("up", "down", "left", "right", "centered"):
+            self.register_event_type(f"on_dpad_{d}")
 
     # ==========================================================
     # Controller Lifecycle
@@ -94,11 +98,23 @@ class ViewWithGamepadSupport(arcade.Window, EventDispatcher):
             self.dpad_x = 0
 
     def on_dpad_motion(self, ctrl, vector: Vec2):
-        """Correct Pyglet 2.x signature: (controller, Vec2)"""
-        try:
-            self.dpad_x, self.dpad_y = int(vector.x), int(vector.y)
-        except Exception as e:
-            print(f"[WARN] Bad D-pad vector: {e}")
+        old_x, old_y = getattr(self, "dpad_x", 0), getattr(self, "dpad_y", 0)
+        new_x, new_y = int(vector.x), int(vector.y)
+        self.dpad_x, self.dpad_y = new_x, new_y
+
+        # Edge-triggered events
+        if new_x == 1 and old_x != 1:
+            self.dispatch_event("on_dpad_right")
+        elif new_x == -1 and old_x != -1:
+            self.dispatch_event("on_dpad_left")
+        elif new_y == 1 and old_y != 1:
+            self.dispatch_event("on_dpad_up")
+        elif new_y == -1 and old_y != -1:
+            self.dispatch_event("on_dpad_down")
+
+        # When returning to center
+        if (new_x, new_y) == (0, 0) and (old_x, old_y) != (0, 0):
+            self.dispatch_event("on_dpad_centered")
 
     # ==========================================================
     # Sticks
@@ -194,7 +210,8 @@ class ViewWithGamepadSupport(arcade.Window, EventDispatcher):
 
     # ==========================================================
     def on_close(self):
+        """Clean up Controller after closing the window."""
         if self.active:
             self.active.remove_handlers(self)
             self.active.close()
-        super().on_close()
+
