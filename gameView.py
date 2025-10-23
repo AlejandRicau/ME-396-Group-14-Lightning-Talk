@@ -52,7 +52,7 @@ class GameView(ViewWithGamepadSupport):
         )
 
         self.level_text = arcade.Text(
-            "level: \n0",
+            "level: \n1",
             x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1),
             y=WINDOW_HEIGHT - (MARGIN + HEIGHT) * 15,
             color=arcade.color.WHITE,
@@ -73,8 +73,8 @@ class GameView(ViewWithGamepadSupport):
         self.board_stored_sprite_list = None # init of stored stone region
 
         self.score = 0 # init of score keeper
-        self.level = 0
-        self.speed = math.floor(-20*math.log10((self.level + 1)/50))
+        self.level = 1
+        self.speed = math.floor(-20*math.log10((self.level)/50))
 
         self.stone = None  # current stone in hand
         self.next_stone = None  # next stone in line for preview
@@ -161,7 +161,7 @@ class GameView(ViewWithGamepadSupport):
         if check_collision(self.board, self.stone, (self.stone_x, self.stone_y)):
             self.game_over = True
             self.bgm.stop(self.bgm_player)
-            game_view = GameOverView(self.score)
+            game_view = GameOverView(self.score,self.level)
             self.window.show_view(game_view)
 
     def setup(self):
@@ -224,13 +224,13 @@ class GameView(ViewWithGamepadSupport):
         """Calculate the score given a level and number of lines"""
         match n_lines:
             case 1:
-                return 40*(self.level + 1)
+                return 40*self.level
             case 2:
-                return 100*(self.level + 1)
+                return 100*self.level
             case 3:
-                return 300*(self.level + 1)
+                return 300*self.level
             case 4:
-                return 1200*(self.level + 1)
+                return 1200*self.level
 
         return 0
 
@@ -259,7 +259,7 @@ class GameView(ViewWithGamepadSupport):
             multiline=True,
             width=WIDTH * 4
         )
-        if self.score > 1000*(self.level + 1)**2:
+        if self.score > 1000* self.level **2:
             self.level += 1
             self.level_text = arcade.Text(
                 f"level: \n{self.level}",
@@ -271,7 +271,7 @@ class GameView(ViewWithGamepadSupport):
                 multiline=True,
                 width=WIDTH * 4
             )
-            self.speed = math.floor(-20 * math.log10((self.level + 1)/ 50))
+            self.speed = math.floor(-20 * math.log10(self.level / 50))
 
 
     def drop(self):

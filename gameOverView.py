@@ -4,7 +4,7 @@ from helpers import *
 from ViewWithGamepadSupport import ViewWithGamepadSupport
 
 class GameOverView(ViewWithGamepadSupport):
-    def __init__(self,score=0):
+    def __init__(self,score=0,level =0):
         super().__init__()
         # Create the crt filter
         self.crt_filter = CRTFilter(WINDOW_WIDTH*2, WINDOW_HEIGHT*2,
@@ -16,6 +16,7 @@ class GameOverView(ViewWithGamepadSupport):
                                     mask_light=1.5)
         self.filter_on = CRT_FILTER_ON
         self.score = score
+        self.level = level
         self.bgm = arcade.load_sound('sounds/game_over.mp3')
 
     def on_show_view(self):
@@ -33,12 +34,14 @@ class GameOverView(ViewWithGamepadSupport):
             anchor_x="center",
         )
         self.instruction_text = arcade.Text(
-            f"Better luck next time! \n Your score was {self.score}",
+            f"Better luck next time! \nYou reached Level {self.level + 1}\nYour score was {self.score}",
             x=self.window.width / 2,
             y=self.window.height / 2-75,
             color=arcade.color.WHITE,
             font_size=20,
             anchor_x="center",
+            multiline=True,
+            wrap_width=WINDOW_WIDTH,
         )
         self.bgm.play()
 
