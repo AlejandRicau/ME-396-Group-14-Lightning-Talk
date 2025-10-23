@@ -1,3 +1,4 @@
+import math
 from enum import unique
 
 import arcade.key
@@ -50,6 +51,17 @@ class GameView(ViewWithGamepadSupport):
             width = WIDTH * 4
         )
 
+        self.level_text = arcade.Text(
+            "level: \n0",
+            x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1),
+            y=WINDOW_HEIGHT - (MARGIN + HEIGHT) * 15,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="left",
+            multiline=True,
+            width=WIDTH * 4
+        )
+
         self.board = None  # init of main board
         self.board_preview = None  # init of the preview board
         self.board_stored = None
@@ -62,6 +74,7 @@ class GameView(ViewWithGamepadSupport):
 
         self.score = 0 # init of score keeper
         self.level = 0
+        self.speed = math.floor(-20*math.log10((self.level + 1)/50))
 
         self.stone = None  # current stone in hand
         self.next_stone = None  # next stone in line for preview
@@ -246,6 +259,20 @@ class GameView(ViewWithGamepadSupport):
             multiline=True,
             width=WIDTH * 4
         )
+        if self.score > 1000*(self.level + 1)**2:
+            self.level += 1
+            self.level_text = arcade.Text(
+                f"level: \n{self.level}",
+                x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1),
+                y=WINDOW_HEIGHT - (MARGIN + HEIGHT) * 15,
+                color=arcade.color.WHITE,
+                font_size=20,
+                anchor_x="left",
+                multiline=True,
+                width=WIDTH * 4
+            )
+            self.speed = math.floor(-20 * math.log10((self.level + 1)/ 50))
+
 
     def drop(self):
         """
@@ -301,7 +328,7 @@ class GameView(ViewWithGamepadSupport):
     def on_update(self, delta_time):
         """Update, drop stone if warranted"""
         # This is the mechanism where time progresses
-        if GLOBAL_CLOCK.ticks_since(self.start_frame) % 20 == 0:
+        if GLOBAL_CLOCK.ticks_since(self.start_frame) % self.speed == 0:
             self.drop()
 
     def move(self, delta_x):
@@ -542,6 +569,7 @@ class GameView(ViewWithGamepadSupport):
         self.preview_board_text.draw()
         self.stored_board_text.draw()
         self.score_text.draw()
+        self.level_text.draw()
 
         # Draw Bounding box for game area
         arcade.draw_rect_outline(
