@@ -39,6 +39,17 @@ class GameView(ViewWithGamepadSupport):
             anchor_x="left",
         )
 
+        self.score_text = arcade.Text(
+            "Score: \n0",
+            x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1),
+            y=WINDOW_HEIGHT - (MARGIN + HEIGHT) * 12,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="left",
+            multiline=True,
+            width = WIDTH * 4
+        )
+
         self.board = None  # init of main board
         self.board_preview = None  # init of the preview board
         self.board_stored = None
@@ -48,6 +59,9 @@ class GameView(ViewWithGamepadSupport):
         self.board_sprite_list = None  # init of board blocks/boxes
         self.board_preview_sprite_list = None  # init of preview blocks/boxes
         self.board_stored_sprite_list = None # init of stored stone region
+
+        self.score = 0 # init of score keeper
+        self.level = 0
 
         self.stone = None  # current stone in hand
         self.next_stone = None  # next stone in line for preview
@@ -134,7 +148,7 @@ class GameView(ViewWithGamepadSupport):
         if check_collision(self.board, self.stone, (self.stone_x, self.stone_y)):
             self.game_over = True
             self.bgm.stop(self.bgm_player)
-            game_view = GameOverView()
+            game_view = GameOverView(self.score)
             self.window.show_view(game_view)
 
     def setup(self):
@@ -193,6 +207,46 @@ class GameView(ViewWithGamepadSupport):
         self.update_board()
         self.bgm_player = self.bgm.play(loop=True)
 
+    def calculate_score(self,n_lines):
+        """Calculate the score given a level and number of lines"""
+        match n_lines:
+            case 1:
+                return 40*(self.level + 1)
+            case 2:
+                return 100*(self.level + 1)
+            case 3:
+                return 300*(self.level + 1)
+            case 4:
+                return 1200*(self.level + 1)
+
+        return 0
+
+    def clear_lines(self):
+        lines_deleted = 0
+        while True:
+            for i, row in enumerate(self.board[:-1]):
+                if 0 not in row:  # remove row is it is filled
+                    lines_deleted += 1
+                    self.board = remove_row(self.board, i)
+                    self.line_clear_sound.play()
+                    break
+
+            else:
+                self.stone_fallen_sound.play()
+                break
+
+        self.score += self.calculate_score(lines_deleted)
+        self.score_text = arcade.Text(
+            f"Score: \n{self.score}",
+            x=(MARGIN + WIDTH) * (COLUMN_COUNT + 1),
+            y=WINDOW_HEIGHT - (MARGIN + HEIGHT) * 12,
+            color=arcade.color.WHITE,
+            font_size=20,
+            anchor_x="left",
+            multiline=True,
+            width=WIDTH * 4
+        )
+
     def drop(self):
         """
         Drop the stone down one place.
@@ -209,16 +263,7 @@ class GameView(ViewWithGamepadSupport):
                 self.board = join_matrixes(
                     self.board, self.stone, (self.stone_x, self.stone_y)
                 )
-
-                while True:
-                    for i, row in enumerate(self.board[:-1]):
-                        if 0 not in row:  # remove row is it is filled
-                            self.board = remove_row(self.board, i)
-                            self.line_clear_sound.play()
-                            break
-                    else:
-                        self.stone_fallen_sound.play()
-                        break
+                self.clear_lines()
 
                 self.update_board()
                 self.new_stone()
@@ -237,15 +282,7 @@ class GameView(ViewWithGamepadSupport):
         self.board = join_matrixes(self.board, self.stone, (self.stone_x, self.stone_y))
 
         # Clear full lines
-        while True:
-            for i, row in enumerate(self.board[:-1]):
-                if 0 not in row:
-                    self.board = remove_row(self.board, i)
-                    self.line_clear_sound.play()
-                    break
-            else:
-                self.stone_fallen_sound.play()
-                break
+        self.clear_lines()
 
         # Spawn new stone and update visuals
         self.update_board()
@@ -496,6 +533,37 @@ class GameView(ViewWithGamepadSupport):
                 i = row_idx * PREVIEW_COL_COUNT + col_idx
                 self.board_stored_sprite_list[i].set_texture(cell_value)
 
+    def draw(self):
+        self.board_sprite_list.draw()
+        self.board_preview_sprite_list.draw()
+        self.board_stored_sprite_list.draw()
+        self.draw_grid(self.stone, self.stone_x, self.stone_y)
+        self.draw_ghost()  # This is for the landing prediction
+        self.preview_board_text.draw()
+        self.stored_board_text.draw()
+        self.score_text.draw()
+
+        # Draw Bounding box for game area
+        arcade.draw_rect_outline(
+            arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2 * MARGIN)),
+            arcade.color.WHITE, BORDER_WIDTH)
+
+        # Draw Bounding box for preview area
+        arcade.draw_rect_outline(
+            arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 4,
+                             (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
+                             (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
+                             ), arcade.color.WHITE, BORDER_WIDTH
+        )
+
+        # Draw Bounding Box for Storage Area
+        arcade.draw_rect_outline(
+            arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 9,
+                             (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
+                             (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
+                             ), arcade.color.WHITE, BORDER_WIDTH
+        )
+
     def on_draw(self):
         """Render the screen."""
 
@@ -503,67 +571,14 @@ class GameView(ViewWithGamepadSupport):
         if self.filter_on:
             self.crt_filter.use()
             self.crt_filter.clear()
-            self.board_sprite_list.draw()
-            self.board_preview_sprite_list.draw()
-            self.board_stored_sprite_list.draw()
-            self.draw_grid(self.stone, self.stone_x, self.stone_y)
-            self.draw_ghost()  # This is for the landing prediction
-            self.preview_board_text.draw()
-            self.stored_board_text.draw()
-
-            # Draw Bounding box for game area
-            arcade.draw_rect_outline(
-                arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2 * MARGIN)),
-                arcade.color.WHITE, BORDER_WIDTH)
-
-            # Draw Bounding box for preview area
-            arcade.draw_rect_outline(
-                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1 ), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 4,
-                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT-1) + MARGIN, (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
-                                 ), arcade.color.WHITE, BORDER_WIDTH
-            )
-
-            # Draw Bounding Box for Storage Area
-            arcade.draw_rect_outline(
-                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 9,
-                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
-                                 (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
-                                 ), arcade.color.WHITE, BORDER_WIDTH
-            )
+            self.draw()
 
             self.window.use()
             self.clear()
             self.crt_filter.draw()
         else:
             self.clear()
-            self.board_sprite_list.draw()
-            self.board_preview_sprite_list.draw()
-            self.board_stored_sprite_list.draw()
-            self.draw_grid(self.stone, self.stone_x, self.stone_y)
-            self.draw_ghost()  # This is for the landing prediction
-            self.preview_board_text.draw()
-            self.stored_board_text.draw()
-
-            # Draw Bounding box for board
-            arcade.draw_rect_outline(
-                arcade.rect.LBWH(MARGIN, MARGIN, ((WIDTH + MARGIN) * COLUMN_COUNT), (WINDOW_HEIGHT - 2*MARGIN)),
-                arcade.color.WHITE, BORDER_WIDTH)
-
-            # Draw Bounding box for preview area
-            arcade.draw_rect_outline(
-                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 4,
-                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
-                                 (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
-                                 ), arcade.color.WHITE, BORDER_WIDTH
-            )
-
-            # Draw Bounding Box for Storage Area
-            arcade.draw_rect_outline(
-                arcade.rect.LBWH((MARGIN + WIDTH) * (COLUMN_COUNT + 1), WINDOW_HEIGHT - (MARGIN + HEIGHT) * 9,
-                                 (WIDTH + MARGIN) * (PREVIEW_COL_COUNT - 1) + MARGIN,
-                                 (WIDTH + MARGIN) * PREVIEW_ROW_COUNT + MARGIN
-                                 ), arcade.color.WHITE, BORDER_WIDTH
-            )
+            self.draw()
 
     def ghost_piece_position(self):
         """Calculate the position of the ghost piece."""
